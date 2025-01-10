@@ -1,5 +1,5 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{buffer::Buffer, layout::Rect, widgets::Widget, DefaultTerminal, Frame};
+use ratatui::{DefaultTerminal, Frame};
 use std::io::{self, Read};
 
 use crate::hexview::HexView;
@@ -18,7 +18,7 @@ impl App {
     reader.read_to_end(&mut data)?;
     let application = App {
       data,
-      hexview: HexView {pos: 0},
+      hexview: HexView::default(),
       exit: false,
     };
     Ok(application)
@@ -30,10 +30,6 @@ impl App {
       self.handle_events()?;
     }
     Ok(())
-  }
-
-  fn draw(&self, frame: &mut Frame) {
-    frame.render_widget(self, frame.area());
   }
 
   fn handle_events(&mut self) -> io::Result<()> {
@@ -49,15 +45,13 @@ impl App {
   fn handle_key_event(&mut self, key_event: KeyEvent) {
     match key_event.code {
       KeyCode::Char('q') => self.exit = true,
-      KeyCode::Char('j') => self.hexview.down() ,
+      KeyCode::Char('j') => self.hexview.down(),
       KeyCode::Char('k') => self.hexview.up(),
       _ => (),
     }
   }
-}
 
-impl Widget for &App {
-  fn render(self, area: Rect, buf: &mut Buffer) {
-    self.hexview.draw(area, buf, &self.data)
+  fn draw(&mut self, frame: &mut Frame) {
+    self.hexview.draw(frame, &self.data);
   }
 }

@@ -1,6 +1,8 @@
 use ratatui::{
   buffer::Buffer,
   layout::Rect,
+  style::Stylize,
+  text::{Line, Span},
   widgets::{Paragraph, Widget, Wrap},
 };
 
@@ -39,27 +41,33 @@ impl PngBlock {
       return 0;
     }
     let rows_to_print = std::cmp::min(total_rows - offset, area.height);
-    let start: usize = (offset * bytes_in_row) as usize;
+    let mut start: usize = (offset * bytes_in_row) as usize;
     let end: usize = std::cmp::min(
       ((offset + rows_to_print) * bytes_in_row) as usize,
       self.raw.len(),
     );
-    let hex_strings = self.raw[start..end]
-      .iter()
-      .map(|b| format!("{:02x}", b))
-      .collect::<Vec<_>>()
-      .join(" ");
+    let mut spans = vec![];
+    if start < 4 {
+      spans.push(Span::raw(to_hex(&self.raw[start..start + 4])).green());
+      start += 4;
+    }
+    if start < 8 {
+      spans.push(Span::raw(to_hex(&self.raw[start..start + 4])).red());
+      start += 4;
+    }
+    let body_end = std::cmp::min(end, self.raw.len() - 4);
+    spans.push(Span::raw(to_hex(&self.raw[start..body_end])));
+    start = body_end;
+    if end > self.raw.len() - 4 {
+      spans.push(Span::raw(to_hex(&self.raw[start..end])).red())
+    }
+    for i in 0..spans.len() {
+      spans.insert(2 * i + 1, Span::raw(" "));
+    }
 
-    Paragraph::new(hex_strings)
+    Paragraph::new(Line::from(spans))
       .wrap(Wrap { trim: true })
-      .render(
-        Rect {
-          y: area.y,
-          height: rows_to_print,
-          ..area
-        },
-        buf,
-      );
+      .render(area, buf);
     rows_to_print
   }
 
@@ -67,4 +75,11 @@ impl PngBlock {
     let bytes_in_row = (width + 1) / 3;
     self.raw.len() as u16 / bytes_in_row
   }
+}
+
+fn to_hex(s: &[u8]) -> String {
+  s.iter()
+    .map(|b| format!("{:02x}", b))
+    .collect::<Vec<_>>()
+    .join(" ")
 }

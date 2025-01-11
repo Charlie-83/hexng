@@ -1,7 +1,6 @@
 use ratatui::{
   prelude::{Buffer, Rect},
-  widgets::{Block, Paragraph, Widget, Wrap},
-  Frame,
+  widgets::{Paragraph, Widget, Wrap},
 };
 
 #[derive(Default)]
@@ -11,9 +10,8 @@ pub struct HexView {
 }
 
 impl HexView {
-  pub fn draw(&mut self, frame: &mut Frame, data: &[u8]) {
-    let area = frame.area();
-    self.row_bytes = ( area.width + 1 ) / 3;
+  pub fn draw(&mut self, area: Rect, buf: &mut Buffer, data: &[u8]) {
+    self.row_bytes = (area.width + 1) / 3;
 
     let chars = (self.row_bytes * area.height) as usize;
     let hex_string: String = data[self.pos..chars + self.pos]
@@ -22,11 +20,9 @@ impl HexView {
       .collect::<Vec<_>>()
       .join(" ");
 
-    frame.render_widget(
-      Paragraph::new(hex_string)
-        .wrap(Wrap { trim: true }),
-      area,
-    )
+    Paragraph::new(hex_string)
+      .wrap(Wrap { trim: true })
+      .render(area, buf)
   }
 
   pub fn down(&mut self) {

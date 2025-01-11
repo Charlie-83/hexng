@@ -1,4 +1,8 @@
-use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+use ratatui::{
+  buffer::Buffer,
+  layout::Rect,
+  widgets::{Paragraph, Widget, Wrap},
+};
 
 pub struct PngBlock {
   pub raw: Vec<u8>,
@@ -44,20 +48,18 @@ impl PngBlock {
       .iter()
       .map(|b| format!("{:02x}", b))
       .collect::<Vec<_>>()
-      .chunks(bytes_in_row as usize)
-      .map(|line| line.join(" "))
-      .collect::<Vec<_>>();
+      .join(" ");
 
-    for i in 0..rows_to_print {
-      Line::from(hex_strings[i as usize].as_str()).render(
+    Paragraph::new(hex_strings)
+      .wrap(Wrap { trim: true })
+      .render(
         Rect {
-          y: area.y + i,
-          height: 1,
+          y: area.y,
+          height: rows_to_print,
           ..area
         },
         buf,
       );
-    }
     rows_to_print
   }
 

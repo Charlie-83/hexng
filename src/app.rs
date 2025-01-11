@@ -5,15 +5,14 @@ use ratatui::{
   widgets::{Block, Paragraph, Widget},
   DefaultTerminal,
 };
-use std::{
-  alloc::Layout,
-  io::{self, Read},
-};
+use std::io::{self, Read};
 
-use crate::hexview::HexView;
+use crate::{hexview::HexView, pcapng::parse};
+use crate::pcapng::PngBlock;
 
 pub struct App {
-  data: Vec<u8>,
+  data: Vec<PngBlock>,
+  raw: Vec<u8>,
   hexview: HexView,
   exit: bool,
   path: std::path::PathBuf,
@@ -23,10 +22,11 @@ impl App {
   pub fn new(path: std::path::PathBuf) -> std::io::Result<App> {
     let f = std::fs::File::open(&path).expect("Failed to open file");
     let mut reader = std::io::BufReader::new(f);
-    let mut data: Vec<u8> = vec![];
-    reader.read_to_end(&mut data)?;
+    let mut raw: Vec<u8> = vec![];
+    reader.read_to_end(&mut raw)?;
     let application = App {
-      data,
+      data: parse(&raw),
+      raw,
       hexview: HexView::default(),
       exit: false,
       path,

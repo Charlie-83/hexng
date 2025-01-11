@@ -1,35 +1,39 @@
-use ratatui::{
-  prelude::{Buffer, Rect},
-  widgets::{Paragraph, Widget, Wrap},
-};
+use ratatui::prelude::{Buffer, Rect};
+
+use crate::pcapng::PngBlock;
 
 #[derive(Default)]
 pub struct HexView {
-  pos: usize,
-  row_bytes: u16,
+  top_block: usize,
+  pos: u16,
 }
 
 impl HexView {
-  pub fn draw(&mut self, area: Rect, buf: &mut Buffer, data: &[u8]) {
-    self.row_bytes = (area.width + 1) / 3;
-
-    let chars = (self.row_bytes * area.height) as usize;
-    let hex_string: String = data[self.pos..chars + self.pos]
-      .iter()
-      .map(|b| format!("{:02x}", b))
-      .collect::<Vec<_>>()
-      .join(" ");
-
-    Paragraph::new(hex_string)
-      .wrap(Wrap { trim: true })
-      .render(area, buf)
+  pub fn draw(&mut self, mut area: Rect, buf: &mut Buffer, data: &Vec<PngBlock>) {
+    let mut offset = self.pos;
+    for block in &data[self.top_block as usize..] {
+      let rows = block.draw(area, buf, offset);
+      if rows == 0 {
+        self.top_block += 1;
+        self.pos = 0;
+      } else {
+        if area.height - rows <= 1 {
+          break;
+        } else {
+          area.y += rows + 1;
+          area.height -= rows + 1;
+        }
+      }
+      offset = 0;
+    }
   }
 
   pub fn down(&mut self) {
-    self.pos += self.row_bytes as usize;
+    self.pos += 1;
   }
 
   pub fn up(&mut self) {
-    self.pos = self.pos.saturating_sub(self.row_bytes as usize);
+    self.pos = self.pos.saturating_sub(1);
+    self.top_block = self.top_block.saturating_sub(1);
   }
 }

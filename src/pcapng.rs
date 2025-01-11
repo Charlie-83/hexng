@@ -60,4 +60,9 @@ impl PngBlock {
     }
     rows_to_print
   }
+
+  pub fn rows(&self, width: u16) -> u16 {
+    let bytes_in_row = (width + 1) / 3;
+    self.raw.len() as u16 / bytes_in_row
+  }
 }

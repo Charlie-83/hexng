@@ -67,6 +67,12 @@ impl HexView {
     }
   }
 
+  pub fn down_half(&mut self) {
+      for _ in 0..self.area.height / 2 {
+          self.down()
+      }
+  }
+
   pub fn up(&mut self) {
     if self.cursor.1 == 0 {
       self.pos -= 1;
@@ -76,6 +82,12 @@ impl HexView {
     } else {
       self.cursor.1 -= 1;
     }
+  }
+
+  pub fn up_half(&mut self) {
+      for _ in 0..self.area.height / 2 {
+          self.up()
+      }
   }
 
   pub fn left(&mut self) {

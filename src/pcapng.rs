@@ -35,6 +35,9 @@ impl PngBlock {
   pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16) -> u16 {
     let bytes_in_row = (area.width + 1) / 3;
     let total_rows = div_ceil(self.raw.len() as u16, bytes_in_row) + 1;
+    if hidden > total_rows {
+      return 0;
+    }
 
     let total_rows_to_print = std::cmp::min(total_rows - hidden, area.height);
     if total_rows_to_print <= 1 {

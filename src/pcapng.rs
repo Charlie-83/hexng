@@ -32,7 +32,7 @@ pub fn parse(data: &Vec<u8>) -> Vec<PngBlock> {
 }
 
 impl PngBlock {
-  pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16) -> u16 {
+  pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16, folded: bool) -> u16 {
     let bytes_in_row = (area.width + 1) / 3;
     let total_rows = div_ceil(self.raw.len() as u16, bytes_in_row) + 1;
     if hidden > total_rows {
@@ -49,6 +49,10 @@ impl PngBlock {
       .underlined()
       .bold()
       .render(area, buf);
+    if folded {
+      return 1;
+    }
+
     area.y += 1;
     area.height -= 1;
     rows_to_print -= 1;

@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::{cmp::min, collections::HashSet};
 
 use ratatui::{
   prelude::{Buffer, Rect},
@@ -15,6 +15,8 @@ pub struct HexView {
   pos: i16,
   cursor: (u16, u16),
   area: Rect,
+  packet_areas: Vec<u16>,
+  folded: HashSet<usize>,
 }
 
 impl HexView {
@@ -30,12 +32,19 @@ impl HexView {
       self.pos = data[self.top_block].rows(area.width) as i16;
     }
     offset = self.pos as u16;
-    for block in &data[self.top_block as usize..] {
-      let rows = block.draw(area, buf, offset);
+    self.packet_areas.clear();
+    for (i, block) in data[self.top_block as usize..].iter().enumerate() {
+      let rows = block.draw(
+        area,
+        buf,
+        offset,
+        self.folded.contains(&(self.top_block + i)),
+      );
       if rows == 0 {
         self.top_block += 1;
         self.pos = 0;
       } else {
+        self.packet_areas.push(rows);
         if area.height - rows <= 2 {
           break;
         } else {
@@ -68,9 +77,9 @@ impl HexView {
   }
 
   pub fn down_half(&mut self) {
-      for _ in 0..self.area.height / 2 {
-          self.down()
-      }
+    for _ in 0..self.area.height / 2 {
+      self.down()
+    }
   }
 
   pub fn up(&mut self) {
@@ -85,9 +94,9 @@ impl HexView {
   }
 
   pub fn up_half(&mut self) {
-      for _ in 0..self.area.height / 2 {
-          self.up()
-      }
+    for _ in 0..self.area.height / 2 {
+      self.up()
+    }
   }
 
   pub fn left(&mut self) {
@@ -96,5 +105,19 @@ impl HexView {
 
   pub fn right(&mut self) {
     self.cursor.0 = min(self.cursor.0 + 1, self.area.width - 1);
+  }
+
+  pub fn fold(&mut self) {
+    let mut cursor_y = self.cursor.1;
+    let mut i = self.top_block;
+    while cursor_y > self.packet_areas[i] {
+      cursor_y -= self.packet_areas[i] + 1;
+      i += 1;
+    }
+    if self.folded.contains(&i) {
+      self.folded.remove(&i);
+    } else {
+      self.folded.insert(i);
+    }
   }
 }

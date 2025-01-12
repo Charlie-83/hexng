@@ -67,6 +67,7 @@ impl App {
           self.hexview.up_half()
         }
       }
+      KeyCode::Char('f') => self.hexview.fold(),
       _ => (),
     }
   }

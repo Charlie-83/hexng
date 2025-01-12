@@ -74,9 +74,17 @@ impl App {
   }
 
   fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-    Paragraph::new(self.path.to_str().unwrap_or("Invalid unicode in path"))
-      .block(Block::bordered())
-      .render(Rect { height: 3, ..area }, buf);
+    Paragraph::new(
+      self
+        .path
+        .file_name().expect("Error") // TODO: Error handling
+        .to_str()
+        .unwrap_or("Invalid unicode in path")
+        .to_owned()
+        + std::format!(" | {} Packets", self.data.len()).as_str(),
+    )
+    .block(Block::bordered())
+    .render(Rect { height: 3, ..area }, buf);
     let hex_area = Rect {
       y: area.y + 3,
       height: area.height - 3,

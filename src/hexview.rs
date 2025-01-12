@@ -12,47 +12,52 @@ use crate::pcapng::PngBlock;
 #[derive(Default)]
 pub struct HexView {
   top_block: usize,
-  pos: i16,
+  hidden: i16, // Number of lines of the top block that are hidden
   cursor: (u16, u16),
   area: Rect,
-  packet_areas: Vec<u16>,
+  block_areas: Vec<u16>,
   folded: HashSet<usize>,
 }
 
 impl HexView {
   pub fn draw(&mut self, mut area: Rect, buf: &mut Buffer, data: &Vec<PngBlock>) {
     if self.area != area {
+      // Area changed
       self.area = area;
       self.cursor.0 = min(self.cursor.0, area.width - 1);
       self.cursor.1 = min(self.cursor.1, area.height - 1);
     }
-    let mut offset: u16;
-    if self.pos < 0 {
-      self.top_block -= 1;
-      self.pos = data[self.top_block].rows(area.width) as i16;
+    while self.hidden < 0 {
+      if self.top_block != 0 {
+        self.top_block -= 1;
+        self.hidden = data[self.top_block].rows(area.width) as i16;
+      } else {
+        self.hidden = 0;
+      }
     }
-    offset = self.pos as u16;
-    self.packet_areas.clear();
+    self.block_areas.clear();
     for (i, block) in data[self.top_block as usize..].iter().enumerate() {
       let rows = block.draw(
         area,
         buf,
-        offset,
+        self.hidden as u16,
         self.folded.contains(&(self.top_block + i)),
       );
       if rows == 0 {
+        // Whole block above area
         self.top_block += 1;
-        self.pos = 0;
+        self.hidden -= block.rows(area.width) as i16;
+        assert!(self.hidden >= 0)
       } else {
-        self.packet_areas.push(rows);
+        self.block_areas.push(rows);
         if area.height - rows <= 2 {
+          // Block has filled the remaining area
           break;
         } else {
           area.y += rows + 1;
           area.height -= rows + 1;
         }
       }
-      offset = 0;
     }
 
     Block::default()
@@ -69,34 +74,27 @@ impl HexView {
   }
 
   pub fn down(&mut self) {
-    self.cursor.1 += 1;
     if self.cursor.1 >= self.area.height {
-      self.pos += 1;
-      self.cursor.1 -= 1;
+      self.hidden += 1;
+    } else {
+      self.cursor.1 += 1;
     }
   }
 
   pub fn down_half(&mut self) {
-    for _ in 0..self.area.height / 2 {
-      self.down()
-    }
+    self.hidden += (self.area.height / 2) as i16;
   }
 
   pub fn up(&mut self) {
     if self.cursor.1 == 0 {
-      self.pos -= 1;
-      if self.top_block == 0 && self.pos == -1 {
-        self.pos = 0;
-      }
+      self.hidden -= 1;
     } else {
       self.cursor.1 -= 1;
     }
   }
 
   pub fn up_half(&mut self) {
-    for _ in 0..self.area.height / 2 {
-      self.up()
-    }
+    self.hidden -= (self.area.height / 2) as i16;
   }
 
   pub fn left(&mut self) {
@@ -110,8 +108,8 @@ impl HexView {
   pub fn fold(&mut self) {
     let mut cursor_y = self.cursor.1;
     let mut i = self.top_block;
-    while cursor_y > self.packet_areas[i] {
-      cursor_y -= self.packet_areas[i] + 1;
+    while cursor_y > self.block_areas[i] {
+      cursor_y -= self.block_areas[i] + 1;
       i += 1;
     }
     if self.folded.contains(&i) {

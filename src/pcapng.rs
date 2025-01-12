@@ -34,7 +34,7 @@ pub fn parse(data: &Vec<u8>) -> Vec<PngBlock> {
 impl PngBlock {
   pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16, folded: bool) -> u16 {
     let bytes_in_row = (area.width + 1) / 3;
-    let total_rows = div_ceil(self.raw.len() as u16, bytes_in_row) + 1;
+    let total_rows = div_ceil(self.length as u16, bytes_in_row) + 1;
     if hidden > total_rows {
       return 0;
     }
@@ -58,10 +58,8 @@ impl PngBlock {
     rows_to_print -= 1;
 
     let mut start: usize = (hidden * bytes_in_row) as usize;
-    let end: usize = std::cmp::min(
-      ((hidden + rows_to_print) * bytes_in_row) as usize,
-      self.raw.len(),
-    );
+    let end: usize =
+      std::cmp::min((hidden + rows_to_print) * bytes_in_row, self.length as u16) as usize;
     let mut spans = vec![];
     if start < 4 {
       spans.push(Span::raw(to_hex(&self.raw[start..start + 4])).green());
@@ -71,10 +69,12 @@ impl PngBlock {
       spans.push(Span::raw(to_hex(&self.raw[start..start + 4])).red());
       start += 4;
     }
-    let body_end = std::cmp::min(end, self.raw.len() - 4);
-    spans.push(Span::raw(to_hex(&self.raw[start..body_end])));
-    start = body_end;
-    if end > self.raw.len() - 4 {
+    if start < self.length as usize - 4 {
+      let body_end = std::cmp::min(end, self.length as usize - 4);
+      spans.push(Span::raw(to_hex(&self.raw[start..body_end])));
+      start = body_end;
+    }
+    if end > self.length as usize - 4 {
       spans.push(Span::raw(to_hex(&self.raw[start..end])).red())
     }
     for i in 0..spans.len() {
@@ -89,7 +89,7 @@ impl PngBlock {
 
   pub fn rows(&self, width: u16) -> u16 {
     let bytes_in_row = (width + 1) / 3;
-    self.raw.len() as u16 / bytes_in_row
+    self.length as u16 / bytes_in_row
   }
 }
 

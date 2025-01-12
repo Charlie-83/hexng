@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
   buffer::Buffer,
   layout::Rect,
@@ -7,8 +7,8 @@ use ratatui::{
 };
 use std::io::{self, Read};
 
-use crate::{hexview::HexView, pcapng::parse};
 use crate::pcapng::PngBlock;
+use crate::{hexview::HexView, pcapng::parse};
 
 pub struct App {
   data: Vec<PngBlock>,
@@ -57,6 +57,8 @@ impl App {
       KeyCode::Char('q') => self.exit = true,
       KeyCode::Char('j') => self.hexview.down(),
       KeyCode::Char('k') => self.hexview.up(),
+      KeyCode::Char('h') => self.hexview.left(),
+      KeyCode::Char('l') => self.hexview.right(),
       _ => (),
     }
   }

@@ -4,6 +4,7 @@ use std::io;
 mod app;
 pub mod hexview;
 pub mod pcapng;
+pub mod util;
 
 #[derive(Parser)]
 struct Cli {

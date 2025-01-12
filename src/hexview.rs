@@ -22,7 +22,7 @@ impl HexView {
         self.top_block += 1;
         self.pos = 0;
       } else {
-        if area.height - rows <= 1 {
+        if area.height - rows <= 2 {
           break;
         } else {
           area.y += rows + 1;

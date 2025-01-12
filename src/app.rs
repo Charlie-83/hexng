@@ -12,7 +12,6 @@ use crate::{hexview::HexView, pcapng::parse};
 
 pub struct App {
   data: Vec<PngBlock>,
-  raw: Vec<u8>,
   hexview: HexView,
   exit: bool,
   path: std::path::PathBuf,
@@ -26,7 +25,6 @@ impl App {
     reader.read_to_end(&mut raw)?;
     let application = App {
       data: parse(&raw),
-      raw,
       hexview: HexView::default(),
       exit: false,
       path,

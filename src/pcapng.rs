@@ -8,6 +8,7 @@ use ratatui::{
 };
 
 pub struct PngBlock {
+  pub id: u32,
   pub raw: Vec<u8>,
   pub block_type: u32,
   pub length: u32,
@@ -17,30 +18,41 @@ pub struct PngBlock {
 pub fn parse(data: &Vec<u8>) -> Vec<PngBlock> {
   let mut out: Vec<PngBlock> = vec![];
   let mut pos: usize = 0;
+  let mut id: u32 = 0;
   while pos < data.len() {
     let block_type = u32::from_le_bytes(data[pos..pos + 4].try_into().unwrap());
     let length = u32::from_le_bytes(data[pos + 4..pos + 8].try_into().unwrap());
-    out.push(PngBlock {
-      raw: data[pos..pos + (length as usize)].to_vec(),
+    out.push(PngBlock::new(
+      data[pos..pos + (length as usize)].to_vec(),
       block_type,
       length,
-      options: vec![],
-    });
+      vec![],
+      id,
+    ));
+    id += 1;
     pos += length as usize;
   }
   out
 }
 
 impl PngBlock {
+  fn new(raw: Vec<u8>, block_type: u32, length: u32, options: Vec<u8>, id: u32) -> PngBlock {
+    PngBlock {
+      raw,
+      block_type,
+      length,
+      options,
+      id,
+    }
+  }
+
   pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16, folded: bool) -> u16 {
     let bytes_in_row = (area.width + 1) / 3;
     let total_rows = div_ceil(self.length as u16, bytes_in_row) + 1;
-    if hidden > total_rows {
-      return 0;
-    }
+    assert!(hidden < total_rows);
 
     let total_rows_to_print = std::cmp::min(total_rows - hidden, area.height);
-    if total_rows_to_print <= 1 {
+    if total_rows_to_print == 0 {
       return 0;
     }
     let mut rows_to_print = total_rows_to_print;
@@ -49,7 +61,7 @@ impl PngBlock {
       .underlined()
       .bold()
       .render(area, buf);
-    if folded {
+    if folded || rows_to_print == 1 {
       return 1;
     }
 
@@ -89,7 +101,7 @@ impl PngBlock {
 
   pub fn rows(&self, width: u16) -> u16 {
     let bytes_in_row = (width + 1) / 3;
-    self.length as u16 / bytes_in_row
+    div_ceil(self.length as u16, bytes_in_row) + 1
   }
 }
 

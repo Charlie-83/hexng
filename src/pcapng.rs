@@ -57,7 +57,7 @@ impl PngBlock {
     }
     let mut rows_to_print = total_rows_to_print;
 
-    Line::raw(block_type_str(self.block_type))
+    Line::raw(self.id.to_string() + ": " + &block_type_str(self.block_type))
       .underlined()
       .bold()
       .render(area, buf);

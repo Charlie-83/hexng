@@ -118,6 +118,10 @@ impl HexView {
     self.pos = self.get_block_pos(last_id);
   }
 
+  pub fn top(&mut self) {
+    self.pos = 0;
+  }
+
   pub fn fold(&mut self) {
     let mut cursor_y = self.cursor.1;
     for (id, area) in &self.block_areas {

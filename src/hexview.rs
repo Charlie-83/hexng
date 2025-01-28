@@ -32,13 +32,13 @@ impl HexView {
       self.area = area;
       self.cursor.0 = min(self.cursor.0, area.width - 1);
       self.cursor.1 = min(self.cursor.1, area.height - 1);
+      for block in data {
+        self.row_counts.insert(block.id, block.rows(area.width));
+      }
     }
     self.block_areas.clear();
     let mut current_pos: u32 = 0;
     for (_, block) in data.iter().enumerate() {
-      if !self.row_counts.contains_key(&block.id) {
-        self.row_counts.insert(block.id, block.rows(area.width));
-      }
       let rows = self.row_counts[&block.id];
       if current_pos + (rows as u32) <= self.pos {
         if current_pos + (rows as u32) == self.pos {
@@ -113,6 +113,11 @@ impl HexView {
     self.cursor.0 = min(self.cursor.0 + 1, self.area.width - 1);
   }
 
+  pub fn bottom(&mut self) {
+    let last_id = self.row_counts.keys().max().unwrap();
+    self.pos = self.get_block_pos(last_id);
+  }
+
   pub fn fold(&mut self) {
     let mut cursor_y = self.cursor.1;
     for (id, area) in &self.block_areas {
@@ -129,5 +134,13 @@ impl HexView {
         break;
       }
     }
+  }
+
+  fn get_block_pos(&self, id: &u32) -> u32 {
+    let mut pos = 0;
+    for i in 0..*id {
+      pos += self.row_counts[&i] as u32 + 1;
+    }
+    return pos;
   }
 }

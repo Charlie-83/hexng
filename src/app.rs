@@ -57,6 +57,7 @@ impl App {
       KeyCode::Char('k') => self.hexview.up(),
       KeyCode::Char('h') => self.hexview.left(),
       KeyCode::Char('l') => self.hexview.right(),
+      KeyCode::Char('G') => self.hexview.bottom(),
       KeyCode::Char('d') => {
         if key_event.modifiers.contains(KeyModifiers::CONTROL) {
           self.hexview.down_half()

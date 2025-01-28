@@ -113,7 +113,7 @@ impl PngBlock {
     }
 
     for i in 0..spans.len() {
-      spans.insert(2 * i + 1, Span::raw(" "));
+      spans.insert(2 * i + 1, Span::raw("|"));
     }
 
     Paragraph::new(Line::from(spans))

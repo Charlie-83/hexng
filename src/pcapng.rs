@@ -2,7 +2,7 @@ use crate::util::div_ceil;
 use ratatui::{
   buffer::Buffer,
   layout::Rect,
-  style::Stylize,
+  style::{Color, Stylize},
   text::{Line, Span},
   widgets::{Paragraph, Widget, Wrap},
 };
@@ -69,26 +69,49 @@ impl PngBlock {
     area.height -= 1;
     rows_to_print -= 1;
 
-    let mut start: usize = (hidden * bytes_in_row) as usize;
+    let start: usize = (hidden * bytes_in_row) as usize;
     let end: usize =
       std::cmp::min((hidden + rows_to_print) * bytes_in_row, self.length as u16) as usize;
     let mut spans = vec![];
-    if start < 4 {
-      spans.push(Span::raw(to_hex(&self.raw[start..start + 4])).green());
-      start += 4;
+    let mut current_section = 0;
+    let mut index = 0;
+    let mut fg_colour_index = 0;
+    let mut bg_colour_index = 0;
+    let fg_colours = [
+      Color::White,
+      Color::Red,
+      Color::Green,
+      Color::Magenta,
+      Color::LightBlue,
+    ];
+    let bg_colours = [Color::Black, Color::DarkGray];
+    while index < end {
+      let section = self.sections()[current_section];
+      if index < start && index + section > start {
+        spans.push(
+          Span::raw(to_hex(&self.raw[start..index + section]))
+            .fg(fg_colours[fg_colour_index])
+            .bg(bg_colours[bg_colour_index]),
+        );
+      } else if index > start && index + section <= end {
+        spans.push(
+          Span::raw(to_hex(&self.raw[index..index + section]))
+            .fg(fg_colours[fg_colour_index])
+            .bg(bg_colours[bg_colour_index]),
+        );
+      } else if index > start && index + section > end {
+        spans.push(
+          Span::raw(to_hex(&self.raw[index..end]))
+            .fg(fg_colours[fg_colour_index])
+            .bg(bg_colours[bg_colour_index]),
+        );
+      }
+      fg_colour_index = (fg_colour_index + 1) % fg_colours.len();
+      bg_colour_index = (bg_colour_index + 1) % bg_colours.len();
+      index += section;
+      current_section += 1;
     }
-    if start < 8 {
-      spans.push(Span::raw(to_hex(&self.raw[start..start + 4])).red());
-      start += 4;
-    }
-    if start < self.length as usize - 4 {
-      let body_end = std::cmp::min(end, self.length as usize - 4);
-      spans.push(Span::raw(to_hex(&self.raw[start..body_end])));
-      start = body_end;
-    }
-    if end > self.length as usize - 4 {
-      spans.push(Span::raw(to_hex(&self.raw[start..end])).red())
-    }
+
     for i in 0..spans.len() {
       spans.insert(2 * i + 1, Span::raw(" "));
     }
@@ -102,6 +125,13 @@ impl PngBlock {
   pub fn rows(&self, width: u16) -> u16 {
     let bytes_in_row = (width + 1) / 3;
     div_ceil(self.length as u16, bytes_in_row) + 1
+  }
+
+  fn sections(&self) -> Vec<usize> {
+    match self.block_type {
+      0x00000006 => vec![4, 4, 4, 4, 4, 4, 4, self.length as usize - 32, 4],
+      _ => vec![4, 4, self.length as usize - 12, 4],
+    }
   }
 }
 

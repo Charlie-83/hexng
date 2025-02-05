@@ -165,10 +165,14 @@ impl PngBlock {
   }
 
   fn sections(&self) -> Vec<usize> {
-    match self.block_type {
+    let sections = match self.block_type {
       0x00000006 => vec![4, 4, 4, 4, 4, 4, 4, self.length as usize - 32, 4],
+      0x0A0D0D0A => vec![4, 4, 4, 2, 2, 8, self.length as usize - 28, 4],
+      0x00000001 => vec![4, 4, 2, 2, 4, self.length as usize - 20, 4],
       _ => vec![4, 4, self.length as usize - 12, 4],
-    }
+    };
+    assert_eq!(sections.iter().map(|s| *s as u32).sum::<u32>(), self.length);
+    sections
   }
 }
 

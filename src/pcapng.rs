@@ -93,13 +93,13 @@ impl PngBlock {
             .fg(fg_colours[fg_colour_index])
             .bg(bg_colours[bg_colour_index]),
         );
-      } else if index > start && index + section <= end {
+      } else if index >= start && index + section <= end {
         spans.push(
           Span::raw(to_hex(&self.raw[index..index + section]))
             .fg(fg_colours[fg_colour_index])
             .bg(bg_colours[bg_colour_index]),
         );
-      } else if index > start && index + section > end {
+      } else if index < end && index + section > end {
         spans.push(
           Span::raw(to_hex(&self.raw[index..end]))
             .fg(fg_colours[fg_colour_index])

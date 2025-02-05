@@ -39,7 +39,12 @@ impl HexView {
     self.block_areas.clear();
     let mut current_pos: u32 = 0;
     for (_, block) in data.iter().enumerate() {
-      let rows = self.row_counts[&block.id];
+      let rows;
+      if self.folded.contains(&block.id) {
+        rows = 1;
+      } else {
+        rows = self.row_counts[&block.id];
+      }
       if current_pos + (rows as u32) <= self.pos {
         if current_pos + (rows as u32) == self.pos {
           area.y += 1;
@@ -130,10 +135,8 @@ impl HexView {
       } else {
         if self.folded.contains(id) {
           self.folded.remove(id);
-          self.row_counts.remove(id);
         } else {
           self.folded.insert(*id);
-          self.row_counts.insert(*id, 1);
         }
         break;
       }

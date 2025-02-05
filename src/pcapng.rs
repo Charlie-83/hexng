@@ -7,12 +7,19 @@ use ratatui::{
   widgets::{Paragraph, Widget, Wrap},
 };
 
+#[derive(Eq, PartialEq)]
+pub enum BlockErrorKind {
+  None,
+  ZeroLength,
+}
+
 pub struct PngBlock {
   pub id: u32,
   pub raw: Vec<u8>,
   pub block_type: u32,
   pub length: u32,
   pub options: Vec<u8>,
+  pub error: BlockErrorKind,
 }
 
 pub fn parse(data: &Vec<u8>) -> Vec<PngBlock> {
@@ -22,12 +29,24 @@ pub fn parse(data: &Vec<u8>) -> Vec<PngBlock> {
   while pos < data.len() {
     let block_type = u32::from_le_bytes(data[pos..pos + 4].try_into().unwrap());
     let length = u32::from_le_bytes(data[pos + 4..pos + 8].try_into().unwrap());
+    if length == 0 {
+      out.push(PngBlock::new(
+        vec![],
+        block_type,
+        length,
+        vec![],
+        id,
+        BlockErrorKind::ZeroLength,
+      ));
+      break;
+    }
     out.push(PngBlock::new(
       data[pos..pos + (length as usize)].to_vec(),
       block_type,
       length,
       vec![],
       id,
+      BlockErrorKind::None,
     ));
     id += 1;
     pos += length as usize;
@@ -36,17 +55,32 @@ pub fn parse(data: &Vec<u8>) -> Vec<PngBlock> {
 }
 
 impl PngBlock {
-  fn new(raw: Vec<u8>, block_type: u32, length: u32, options: Vec<u8>, id: u32) -> PngBlock {
+  fn new(
+    raw: Vec<u8>,
+    block_type: u32,
+    length: u32,
+    options: Vec<u8>,
+    id: u32,
+    error: BlockErrorKind,
+  ) -> PngBlock {
     PngBlock {
       raw,
       block_type,
       length,
       options,
       id,
+      error,
     }
   }
 
   pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16, folded: bool) -> u16 {
+    if self.error == BlockErrorKind::ZeroLength {
+      Line::raw(self.id.to_string() + ": ERROR Block has zero length")
+        .underlined()
+        .bold()
+        .render(area, buf);
+    }
+
     let bytes_in_row = (area.width + 1) / 3;
     let total_rows = div_ceil(self.length as u16, bytes_in_row) + 1;
     assert!(hidden < total_rows);
@@ -123,6 +157,9 @@ impl PngBlock {
   }
 
   pub fn rows(&self, width: u16) -> u16 {
+    if self.error == BlockErrorKind::ZeroLength {
+      return 1;
+    }
     let bytes_in_row = (width + 1) / 3;
     div_ceil(self.length as u16, bytes_in_row) + 1
   }

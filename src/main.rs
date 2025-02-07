@@ -5,6 +5,7 @@ mod app;
 pub mod hexview;
 pub mod pcapng;
 pub mod util;
+pub mod help;
 
 #[derive(Parser)]
 struct Cli {

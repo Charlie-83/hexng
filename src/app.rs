@@ -7,7 +7,10 @@ use ratatui::{
 };
 use std::io::{self, Read};
 
-use crate::pcapng::PngBlock;
+use crate::{
+  help::{draw_help, HELP_LINES},
+  pcapng::PngBlock,
+};
 use crate::{hexview::HexView, pcapng::parse};
 
 pub struct App {
@@ -15,6 +18,7 @@ pub struct App {
   hexview: HexView,
   exit: bool,
   path: std::path::PathBuf,
+  help: bool,
 }
 
 impl App {
@@ -28,6 +32,7 @@ impl App {
       hexview: HexView::default(),
       exit: false,
       path,
+      help: false,
     };
     Ok(application)
   }
@@ -71,6 +76,7 @@ impl App {
       }
       KeyCode::Char('f') => self.hexview.fold(),
       KeyCode::Char('a') => self.hexview.toggle_ascii(),
+      KeyCode::Char('?') => self.toggle_help(),
       _ => (),
     }
   }
@@ -79,14 +85,31 @@ impl App {
     Paragraph::new(
       self
         .path
-        .file_name().expect("Error") // TODO: Error handling
+        .file_name()
+        .expect("Error") // TODO: Error handling
         .to_str()
         .unwrap_or("Invalid unicode in path")
         .to_owned()
         + std::format!(" | {} Packets", self.data.len()).as_str(),
     )
     .block(Block::bordered())
-    .render(Rect { height: 3, ..area }, buf);
+    .render(
+      Rect {
+        height: 3,
+        width: area.width - 11,
+        ..area
+      },
+      buf,
+    );
+    Paragraph::new(" Help: ?").block(Block::bordered()).render(
+      Rect {
+        height: 3,
+        width: 11,
+        x: area.width - 11,
+        ..area
+      },
+      buf,
+    );
     let hex_area = Rect {
       y: area.y + 3,
       height: area.height - 3,
@@ -103,5 +126,21 @@ impl App {
       buf,
       &self.data,
     );
+
+    if self.help {
+      draw_help(
+        Rect {
+          x: (area.width - 40) / 2,
+          y: (area.height - HELP_LINES) / 2,
+          width: 40,
+          height: HELP_LINES + 2,
+        },
+        buf,
+      );
+    }
+  }
+
+  fn toggle_help(&mut self) {
+    self.help = !self.help;
   }
 }

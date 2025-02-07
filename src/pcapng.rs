@@ -73,7 +73,14 @@ impl PngBlock {
     }
   }
 
-  pub fn draw(&self, mut area: Rect, buf: &mut Buffer, hidden: u16, folded: bool) -> u16 {
+  pub fn draw(
+    &self,
+    mut area: Rect,
+    buf: &mut Buffer,
+    hidden: u16,
+    folded: bool,
+    ascii: bool,
+  ) -> u16 {
     if self.error == BlockErrorKind::ZeroLength {
       Line::raw(self.id.to_string() + ": ERROR Block has zero length")
         .underlined()
@@ -103,6 +110,8 @@ impl PngBlock {
     area.height -= 1;
     rows_to_print -= 1;
 
+    let print_bytes: fn(&[u8]) -> String = if ascii { to_ascii } else { to_hex };
+
     let start: usize = (hidden * bytes_in_row) as usize;
     let end: usize =
       std::cmp::min((hidden + rows_to_print) * bytes_in_row, self.length as u16) as usize;
@@ -123,19 +132,19 @@ impl PngBlock {
       let section = self.sections()[current_section];
       if index < start && index + section > start {
         spans.push(
-          Span::raw(to_hex(&self.raw[start..index + section]))
+          Span::raw(print_bytes(&self.raw[start..index + section]))
             .fg(fg_colours[fg_colour_index])
             .bg(bg_colours[bg_colour_index]),
         );
       } else if index >= start && index + section <= end {
         spans.push(
-          Span::raw(to_hex(&self.raw[index..index + section]))
+          Span::raw(print_bytes(&self.raw[index..index + section]))
             .fg(fg_colours[fg_colour_index])
             .bg(bg_colours[bg_colour_index]),
         );
       } else if index < end && index + section > end {
         spans.push(
-          Span::raw(to_hex(&self.raw[index..end]))
+          Span::raw(print_bytes(&self.raw[index..end]))
             .fg(fg_colours[fg_colour_index])
             .bg(bg_colours[bg_colour_index]),
         );
@@ -179,6 +188,20 @@ impl PngBlock {
 fn to_hex(s: &[u8]) -> String {
   s.iter()
     .map(|b| format!("{:02x}", b))
+    .collect::<Vec<_>>()
+    .join(" ")
+}
+
+fn to_ascii(s: &[u8]) -> String {
+  s.iter()
+    .map(|&b| {
+      if b > 32 && b < 127 {
+        char::from(b)
+      } else {
+        '.'
+      }
+    })
+    .map(|c| c.to_string() + " ")
     .collect::<Vec<_>>()
     .join(" ")
 }

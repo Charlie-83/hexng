@@ -20,6 +20,7 @@ pub struct HexView {
   block_areas: Vec<(u32, u16)>,
   folded: HashSet<u32>,
   row_counts: HashMap<u32, u16>,
+  ascii: bool,
 }
 
 impl HexView {
@@ -62,7 +63,13 @@ impl HexView {
       }
       current_pos += rows as u32 + 1;
 
-      let rows_drawn = block.draw(area, buf, hidden as u16, self.folded.contains(&block.id));
+      let rows_drawn = block.draw(
+        area,
+        buf,
+        hidden as u16,
+        self.folded.contains(&block.id),
+        self.ascii,
+      );
       self.block_areas.push((block.id, rows_drawn));
       if area.height <= 2 + rows_drawn {
         // Block has filled the remaining area
@@ -149,5 +156,9 @@ impl HexView {
       pos += self.row_counts[&i] as u32 + 1;
     }
     return pos;
+  }
+
+  pub fn toggle_ascii(&mut self) {
+    self.ascii = !self.ascii;
   }
 }

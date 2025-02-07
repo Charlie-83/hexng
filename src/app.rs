@@ -70,6 +70,7 @@ impl App {
         }
       }
       KeyCode::Char('f') => self.hexview.fold(),
+      KeyCode::Char('a') => self.hexview.toggle_ascii(),
       _ => (),
     }
   }

@@ -14,7 +14,7 @@ use crate::{
 use crate::{hexview::HexView, pcapng::parse};
 
 pub struct App {
-  data: Vec<PngBlock>,
+  data: Vec<Box<dyn PngBlock>>,
   hexview: HexView,
   exit: bool,
   path: std::path::PathBuf,

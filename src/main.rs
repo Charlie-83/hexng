@@ -6,6 +6,9 @@ pub mod hexview;
 pub mod pcapng;
 pub mod util;
 pub mod help;
+pub mod baseblock;
+pub mod enhanced_packet;
+pub mod types;
 
 #[derive(Parser)]
 struct Cli {

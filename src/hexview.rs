@@ -10,7 +10,7 @@ use ratatui::{
   widgets::Widget,
 };
 
-use crate::pcapng::PngBlock;
+use crate::pcapng::{self, PngBlock};
 
 #[derive(Default)]
 pub struct HexView {
@@ -24,7 +24,7 @@ pub struct HexView {
 }
 
 impl HexView {
-  pub fn draw(&mut self, mut area: Rect, buf: &mut Buffer, data: &Vec<PngBlock>) {
+  pub fn draw(&mut self, mut area: Rect, buf: &mut Buffer, data: &Vec<Box<dyn PngBlock>>) {
     if self.area != area {
       // Area changed
       if self.area.width != area.width {
@@ -34,17 +34,17 @@ impl HexView {
       self.cursor.0 = min(self.cursor.0, area.width - 1);
       self.cursor.1 = min(self.cursor.1, area.height - 1);
       for block in data {
-        self.row_counts.insert(block.id, block.rows(area.width));
+        self.row_counts.insert(block.id(), block.rows(area.width));
       }
     }
     self.block_areas.clear();
     let mut current_pos: u32 = 0;
     for (_, block) in data.iter().enumerate() {
       let rows;
-      if self.folded.contains(&block.id) {
+      if self.folded.contains(&block.id()) {
         rows = 1;
       } else {
-        rows = self.row_counts[&block.id];
+        rows = self.row_counts[&block.id()];
       }
       if current_pos + (rows as u32) <= self.pos {
         if current_pos + (rows as u32) == self.pos {
@@ -63,14 +63,15 @@ impl HexView {
       }
       current_pos += rows as u32 + 1;
 
-      let rows_drawn = block.draw(
+      let rows_drawn = pcapng::draw_block(
+        block,
         area,
         buf,
         hidden as u16,
-        self.folded.contains(&block.id),
+        self.folded.contains(&block.id()),
         self.ascii,
       );
-      self.block_areas.push((block.id, rows_drawn));
+      self.block_areas.push((block.id(), rows_drawn));
       if area.height <= 2 + rows_drawn {
         // Block has filled the remaining area
         break;

@@ -1,6 +1,7 @@
 use crate::baseblock::BaseBlock;
 use crate::enhanced_packet::EnhancedPacket;
 use crate::interface_description::InterfaceDescription;
+use crate::section_header::SectionHeader;
 use crate::types::BlockTypes;
 use crate::util::div_ceil;
 use ratatui::{buffer::Buffer, layout::Rect};
@@ -43,7 +44,10 @@ pub fn parse(data: &Vec<u8>) -> Vec<Box<dyn PngBlock>> {
     let single: (Box<dyn PngBlock>, usize);
     match block_type {
       BlockTypes::EnhancedPacketBlock => single = box_up(EnhancedPacket::parse(&data[pos..], id)),
-      BlockTypes::InterfaceDescriptionBlock => single = box_up(InterfaceDescription::parse(&data[pos..], id)),
+      BlockTypes::InterfaceDescriptionBlock => {
+        single = box_up(InterfaceDescription::parse(&data[pos..], id))
+      }
+      BlockTypes::SectionHeaderBlock => single = box_up(SectionHeader::parse(&data[pos..], id)),
       _ => single = box_up(BaseBlock::parse(&data[pos..], id)),
     }
     if single.0.error() != &BlockErrorKind::None {

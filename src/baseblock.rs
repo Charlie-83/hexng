@@ -11,33 +11,37 @@ pub struct BaseBlock {
   pub error_: BlockErrorKind,
 }
 
-pub fn parse(data: &[u8], id: u32) -> (BaseBlock, usize) {
-  let block_type: BlockTypes = u32::from_le_bytes(data[..4].try_into().unwrap()).into();
-  let length = u32::from_le_bytes(data[4..8].try_into().unwrap());
-  if length == 0 {
+impl BaseBlock {
+  pub const SIZE: usize = 12;
+
+  pub fn parse(data: &[u8], id: u32) -> (BaseBlock, usize) {
+    let block_type: BlockTypes = u32::from_le_bytes(data[..4].try_into().unwrap()).into();
+    let length = u32::from_le_bytes(data[4..8].try_into().unwrap());
+    if length == 0 {
+      return (
+        BaseBlock::new(
+          vec![],
+          block_type,
+          length,
+          vec![],
+          id,
+          BlockErrorKind::ZeroLength,
+        ),
+        0,
+      );
+    }
     return (
       BaseBlock::new(
-        vec![],
+        data[..(length as usize)].to_vec(),
         block_type,
         length,
         vec![],
         id,
-        BlockErrorKind::ZeroLength,
+        BlockErrorKind::None,
       ),
-      0,
+      length as usize,
     );
   }
-  return (
-    BaseBlock::new(
-      data[..(length as usize)].to_vec(),
-      block_type,
-      length,
-      vec![],
-      id,
-      BlockErrorKind::None,
-    ),
-    length as usize,
-  );
 }
 
 impl BaseBlock {
@@ -73,7 +77,7 @@ impl PngBlock for BaseBlock {
     let sections = vec![
       ("Block Type", 4),
       ("Block Length", 4),
-      ("Data", self.length_ as usize - 12),
+      ("Data", self.length_ as usize - Self::SIZE),
       ("Block Length", 4),
     ];
     assert_eq!(

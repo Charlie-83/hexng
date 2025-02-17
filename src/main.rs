@@ -8,6 +8,7 @@ pub mod util;
 pub mod help;
 pub mod baseblock;
 pub mod enhanced_packet;
+pub mod interface_description;
 pub mod types;
 
 #[derive(Parser)]

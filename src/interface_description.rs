@@ -41,7 +41,7 @@ impl PngBlock for InterfaceDescription {
       ("Link Type", 2),
       ("Reserved", 2),
       ("Snap Length", 4),
-      ("Packet Data", self.base.length_ as usize - Self::SIZE),
+      ("Options", self.base.length() - Self::SIZE),
     ];
     let mut base_sections = self.base.sections();
     base_sections.remove(2);

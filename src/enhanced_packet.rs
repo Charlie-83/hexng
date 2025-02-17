@@ -49,7 +49,11 @@ impl PngBlock for EnhancedPacket {
       ("Timestamp Lower", 4),
       ("Captured Packet Length", 4),
       ("Original Packet Length", 4),
-      ("Packet Data", self.base.length_ as usize - Self::SIZE),
+      ("Packet Data", self.captured_packet_length as usize),
+      (
+        "Options",
+        self.base.length() - Self::SIZE - self.captured_packet_length as usize,
+      ),
     ];
     let mut base_sections = self.base.sections();
     base_sections.remove(2);

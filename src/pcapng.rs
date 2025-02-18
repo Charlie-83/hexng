@@ -2,7 +2,7 @@ use crate::baseblock::BaseBlock;
 use crate::enhanced_packet::EnhancedPacket;
 use crate::interface_description::InterfaceDescription;
 use crate::section_header::SectionHeader;
-use crate::types::BlockTypes;
+use crate::types::{BlockTypes, LinkTypes};
 use crate::util::div_ceil;
 use ratatui::{buffer::Buffer, layout::Rect};
 use ratatui::{
@@ -37,15 +37,20 @@ where
 
 pub fn parse(data: &Vec<u8>) -> Vec<Box<dyn PngBlock>> {
   let mut out: Vec<Box<dyn PngBlock>> = vec![];
+  let mut interfaces: Vec<LinkTypes> = vec![];
   let mut pos: usize = 0;
   let mut id: u32 = 0;
   while pos < data.len() {
     let block_type: BlockTypes = u32::from_le_bytes(data[pos..pos + 4].try_into().unwrap()).into();
     let single: (Box<dyn PngBlock>, usize);
     match block_type {
-      BlockTypes::EnhancedPacketBlock => single = box_up(EnhancedPacket::parse(&data[pos..], id)),
+      BlockTypes::EnhancedPacketBlock => {
+        single = EnhancedPacket::parse(&data[pos..], id, &interfaces)
+      }
       BlockTypes::InterfaceDescriptionBlock => {
-        single = box_up(InterfaceDescription::parse(&data[pos..], id))
+        let ifd = InterfaceDescription::parse(&data[pos..], id);
+        interfaces.push(ifd.0.link_type);
+        single = box_up(ifd);
       }
       BlockTypes::SectionHeaderBlock => single = box_up(SectionHeader::parse(&data[pos..], id)),
       _ => single = box_up(BaseBlock::parse(&data[pos..], id)),

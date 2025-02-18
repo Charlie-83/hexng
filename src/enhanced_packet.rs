@@ -1,8 +1,12 @@
+use bluetooth_le_ll_with_phdr::BluetoothLELLWithPHDR;
+
 use crate::{
   baseblock::BaseBlock,
   pcapng::{BlockErrorKind, PngBlock},
-  types::BlockTypes,
+  types::{link_type_str, BlockTypes, LinkTypes},
 };
+
+pub mod bluetooth_le_ll_with_phdr;
 
 pub struct EnhancedPacket {
   base: BaseBlock,
@@ -11,29 +15,35 @@ pub struct EnhancedPacket {
   timestamp_lower: u32,
   captured_packet_length: u32,
   original_packet_length: u32,
+  link_type: LinkTypes,
 }
 
 impl EnhancedPacket {
   pub const SIZE: usize = BaseBlock::SIZE + 20;
 
-  pub fn parse(data: &[u8], id: u32) -> (EnhancedPacket, usize) {
+  pub fn parse(data: &[u8], id: u32, interfaces: &Vec<LinkTypes>) -> (Box<dyn PngBlock>, usize) {
     let interface_id = u32::from_le_bytes(data[8..12].try_into().unwrap());
     let base = BaseBlock::parse(data, id);
     let timestamp_upper = u32::from_le_bytes(data[12..16].try_into().unwrap());
     let timestamp_lower = u32::from_le_bytes(data[16..20].try_into().unwrap());
     let captured_packet_length = u32::from_le_bytes(data[24..28].try_into().unwrap());
     let original_packet_length = u32::from_le_bytes(data[28..32].try_into().unwrap());
-    (
-      EnhancedPacket {
-        base: base.0,
-        interface_id,
-        timestamp_upper,
-        timestamp_lower,
-        captured_packet_length,
-        original_packet_length,
-      },
-      base.1,
-    )
+    let p = EnhancedPacket {
+      base: base.0,
+      interface_id,
+      timestamp_upper,
+      timestamp_lower,
+      captured_packet_length,
+      original_packet_length,
+      link_type: interfaces[interface_id as usize],
+    };
+    match p.link_type {
+      LinkTypes::BluetoothLeLlWithPhdr => (
+        Box::new(BluetoothLELLWithPHDR::parse(&data[32..], p)),
+        base.1,
+      ),
+      _ => (Box::new(p), base.1),
+    }
   }
 }
 
@@ -100,7 +110,7 @@ impl PngBlock for EnhancedPacket {
   }
 
   fn title_line(&self) -> String {
-    self.base.title_line()
+    self.base.title_line() + " - " + &link_type_str(&self.link_type)
   }
 
   fn raw(&self) -> &Vec<u8> {

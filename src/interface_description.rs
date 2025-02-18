@@ -6,7 +6,8 @@ use crate::{
 
 pub struct InterfaceDescription {
   base: BaseBlock,
-  link_type: LinkTypes,
+  pub link_type: LinkTypes,
+  #[allow(dead_code)]
   reserved: u16,
   snap_length: u32,
 }

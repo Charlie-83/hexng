@@ -19,7 +19,7 @@ pub enum BlockErrorKind {
 
 pub trait PngBlock {
   fn rows(&self, width: u16) -> u16;
-  fn sections(&self) -> Vec<(&str, usize)>;
+  fn sections(&self) -> Vec<(String, usize)>;
   fn error(&self) -> &BlockErrorKind;
   fn id(&self) -> u32;
   fn length(&self) -> usize;

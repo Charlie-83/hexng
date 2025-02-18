@@ -73,12 +73,15 @@ impl PngBlock for BaseBlock {
     div_ceil(self.length_ as u16, bytes_in_row) + 1
   }
 
-  fn sections(&self) -> Vec<(&str, usize)> {
+  fn sections(&self) -> Vec<(String, usize)> {
     let sections = vec![
-      ("Block Type", 4),
-      ("Block Length", 4),
-      ("Data", self.length_ as usize - Self::SIZE),
-      ("Block Length", 4),
+      (
+        "Block Type - ".to_owned() + &block_type_str(&self.block_type_),
+        4,
+      ),
+      ("Block Length - ".to_owned() + &self.length_.to_string(), 4),
+      ("Data".to_owned(), self.length_ as usize - Self::SIZE),
+      ("Block Length - ".to_owned() + &self.length_.to_string(), 4),
     ];
     assert_eq!(
       sections.iter().map(|s| s.1 as u32).sum::<u32>(),

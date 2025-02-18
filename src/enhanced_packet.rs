@@ -17,8 +17,8 @@ impl EnhancedPacket {
   pub const SIZE: usize = BaseBlock::SIZE + 20;
 
   pub fn parse(data: &[u8], id: u32) -> (EnhancedPacket, usize) {
-    let base = BaseBlock::parse(data, id);
     let interface_id = u32::from_le_bytes(data[8..12].try_into().unwrap());
+    let base = BaseBlock::parse(data, id);
     let timestamp_upper = u32::from_le_bytes(data[12..16].try_into().unwrap());
     let timestamp_lower = u32::from_le_bytes(data[16..20].try_into().unwrap());
     let captured_packet_length = u32::from_le_bytes(data[24..28].try_into().unwrap());
@@ -42,16 +42,34 @@ impl PngBlock for EnhancedPacket {
     self.base.rows(width)
   }
 
-  fn sections(&self) -> Vec<(&str, usize)> {
-    let sections: Vec<(&str, usize)> = vec![
-      ("Interface ID", 4),
-      ("Timestamp Upper", 4),
-      ("Timestamp Lower", 4),
-      ("Captured Packet Length", 4),
-      ("Original Packet Length", 4),
-      ("Packet Data", self.captured_packet_length as usize),
+  fn sections(&self) -> Vec<(String, usize)> {
+    let sections: Vec<(String, usize)> = vec![
       (
-        "Options",
+        "Interface ID - ".to_owned() + &self.interface_id.to_string(),
+        4,
+      ),
+      (
+        "Timestamp Upper - ".to_owned() + &self.timestamp_upper.to_string(),
+        4,
+      ),
+      (
+        "Timestamp Lower - ".to_owned() + &self.timestamp_lower.to_string(),
+        4,
+      ),
+      (
+        "Captured Packet Length - ".to_owned() + &self.captured_packet_length.to_string(),
+        4,
+      ),
+      (
+        "Original Packet Length - ".to_owned() + &self.original_packet_length.to_string(),
+        4,
+      ),
+      (
+        "Packet Data".to_owned(),
+        self.captured_packet_length as usize,
+      ),
+      (
+        "Options".to_owned(),
         self.base.length() - Self::SIZE - self.captured_packet_length as usize,
       ),
     ];

@@ -36,12 +36,18 @@ impl PngBlock for InterfaceDescription {
     self.base.rows(width)
   }
 
-  fn sections(&self) -> Vec<(&str, usize)> {
-    let sections: Vec<(&str, usize)> = vec![
-      ("Link Type", 2),
-      ("Reserved", 2),
-      ("Snap Length", 4),
-      ("Options", self.base.length() - Self::SIZE),
+  fn sections(&self) -> Vec<(String, usize)> {
+    let sections: Vec<(String, usize)> = vec![
+      (
+        "Link Type - ".to_owned() + &link_type_str(&self.link_type),
+        2,
+      ),
+      ("Reserved".to_owned(), 2),
+      (
+        "Snap Length - ".to_owned() + &self.snap_length.to_string(),
+        4,
+      ),
+      ("Options".to_owned(), self.base.length() - Self::SIZE),
     ];
     let mut base_sections = self.base.sections();
     base_sections.remove(2);

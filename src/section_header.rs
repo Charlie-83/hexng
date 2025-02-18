@@ -39,13 +39,30 @@ impl PngBlock for SectionHeader {
     self.base.rows(width)
   }
 
-  fn sections(&self) -> Vec<(&str, usize)> {
-    let sections: Vec<(&str, usize)> = vec![
-      ("Section Byte Order", 4),
-      ("Major Version", 2),
-      ("Minor Version", 2),
-      ("Section Length", 8),
-      ("Options", self.base.length() - Self::SIZE),
+  fn sections(&self) -> Vec<(String, usize)> {
+    let sections: Vec<(String, usize)> = vec![
+      (
+        "Section Byte Order - ".to_owned()
+          + if self.little_endian {
+            "Little Endian"
+          } else {
+            "Big Endian"
+          },
+        4,
+      ),
+      (
+        "Major Version - ".to_owned() + &self.major_version.to_string(),
+        2,
+      ),
+      (
+        "Minor Version - ".to_owned() + &self.minor_version.to_string(),
+        2,
+      ),
+      (
+        "Section Length - ".to_owned() + &self.section_length.to_string(),
+        8,
+      ),
+      ("Options".to_owned(), self.base.length() - Self::SIZE),
     ];
     let mut base_sections = self.base.sections();
     base_sections.remove(2);

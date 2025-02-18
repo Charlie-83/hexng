@@ -9,6 +9,7 @@ use std::io::{self, Read};
 
 use crate::{
   help::{draw_help, HELP_LINES},
+  info::get_detail_string,
   pcapng::PngBlock,
 };
 use crate::{hexview::HexView, pcapng::parse};
@@ -101,6 +102,7 @@ impl App {
       },
       buf,
     );
+
     Paragraph::new(" Help: ?").block(Block::bordered()).render(
       Rect {
         height: 3,
@@ -110,9 +112,10 @@ impl App {
       },
       buf,
     );
+
     let hex_area = Rect {
-      y: area.y + 3,
-      height: area.height - 3,
+      y: area.y + 6,
+      height: area.height - 6,
       ..area
     };
     Block::bordered().render(hex_area, buf);
@@ -125,6 +128,23 @@ impl App {
       },
       buf,
       &self.data,
+    );
+
+    let (id, cursor_y) = self.hexview.id_under_cursor();
+    Paragraph::new(get_detail_string(
+      &self.data[id as usize],
+      hex_area.width - 2,
+      (self.hexview.cursor.0, cursor_y),
+    ))
+    .block(Block::bordered())
+    .render(
+      Rect {
+        height: 3,
+        width: area.width,
+        y: 3,
+        x: area.x,
+      },
+      buf,
     );
 
     if self.help {

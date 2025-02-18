@@ -15,7 +15,7 @@ use crate::pcapng::{self, PngBlock};
 #[derive(Default)]
 pub struct HexView {
   pos: u32, // Number of lines of the top block that are hidden
-  cursor: (u16, u16),
+  pub cursor: (u16, u16),
   area: Rect,
   block_areas: Vec<(u32, u16)>,
   folded: HashSet<u32>,
@@ -135,19 +135,25 @@ impl HexView {
     self.pos = 0;
   }
 
-  pub fn fold(&mut self) {
+  pub fn id_under_cursor(&self) -> (u32, u16) {
     let mut cursor_y = self.cursor.1;
     for (id, area) in &self.block_areas {
       if &cursor_y > area {
         cursor_y -= area + 1;
       } else {
-        if self.folded.contains(id) {
-          self.folded.remove(id);
-        } else {
-          self.folded.insert(*id);
-        }
-        break;
+        return (*id, cursor_y);
       }
+    }
+    assert!(false);
+    (0, 0)
+  }
+
+  pub fn fold(&mut self) {
+    let (id, _) = self.id_under_cursor();
+    if self.folded.contains(&id) {
+      self.folded.remove(&id);
+    } else {
+      self.folded.insert(id);
     }
   }
 

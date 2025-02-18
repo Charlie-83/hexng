@@ -11,6 +11,7 @@ pub mod enhanced_packet;
 pub mod interface_description;
 pub mod section_header;
 pub mod types;
+pub mod info;
 
 #[derive(Parser)]
 struct Cli {

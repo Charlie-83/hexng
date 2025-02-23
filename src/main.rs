@@ -12,6 +12,7 @@ pub mod interface_description;
 pub mod section_header;
 pub mod types;
 pub mod info;
+pub mod loader;
 
 #[derive(Parser)]
 struct Cli {

@@ -1,12 +1,9 @@
-use bluetooth_le_ll_with_phdr::BluetoothLELLWithPHDR;
-
 use crate::{
   baseblock::BaseBlock,
+  loader::{JEnhanced, JTop},
   pcapng::{BlockErrorKind, PngBlock},
   types::{link_type_str, BlockTypes, LinkTypes},
 };
-
-pub mod bluetooth_le_ll_with_phdr;
 
 pub struct EnhancedPacket {
   base: BaseBlock,
@@ -16,19 +13,25 @@ pub struct EnhancedPacket {
   captured_packet_length: u32,
   original_packet_length: u32,
   link_type: LinkTypes,
+  sections_: Vec<(String, usize)>,
 }
 
 impl EnhancedPacket {
   pub const SIZE: usize = BaseBlock::SIZE + 20;
 
-  pub fn parse(data: &[u8], id: u32, interfaces: &Vec<LinkTypes>) -> (Box<dyn PngBlock>, usize) {
+  pub fn parse(
+    data: &[u8],
+    id: u32,
+    interfaces: &Vec<LinkTypes>,
+    config: &JTop,
+  ) -> (EnhancedPacket, usize) {
     let interface_id = u32::from_le_bytes(data[8..12].try_into().unwrap());
     let base = BaseBlock::parse(data, id);
     let timestamp_upper = u32::from_le_bytes(data[12..16].try_into().unwrap());
     let timestamp_lower = u32::from_le_bytes(data[16..20].try_into().unwrap());
     let captured_packet_length = u32::from_le_bytes(data[24..28].try_into().unwrap());
     let original_packet_length = u32::from_le_bytes(data[28..32].try_into().unwrap());
-    let p = EnhancedPacket {
+    let mut p = EnhancedPacket {
       base: base.0,
       interface_id,
       timestamp_upper,
@@ -36,24 +39,14 @@ impl EnhancedPacket {
       captured_packet_length,
       original_packet_length,
       link_type: interfaces[interface_id as usize],
+      sections_: vec![],
     };
-    match p.link_type {
-      LinkTypes::BluetoothLeLlWithPhdr => (
-        Box::new(BluetoothLELLWithPHDR::parse(&data[32..], p)),
-        base.1,
-      ),
-      _ => (Box::new(p), base.1),
-    }
-  }
-}
-
-impl PngBlock for EnhancedPacket {
-  fn rows(&self, width: u16) -> u16 {
-    self.base.rows(width)
+    p.sections_ = p.sections_impl(&config.enhanced_packets);
+    (p, base.1)
   }
 
-  fn sections(&self) -> Vec<(String, usize)> {
-    let sections: Vec<(String, usize)> = vec![
+  fn sections_impl(&self, enhanced_packets: &Vec<JEnhanced>) -> Vec<(String, usize)> {
+    let mut sections: Vec<(String, usize)> = vec![
       (
         "Interface ID - ".to_owned() + &self.interface_id.to_string(),
         4,
@@ -74,23 +67,55 @@ impl PngBlock for EnhancedPacket {
         "Original Packet Length - ".to_owned() + &self.original_packet_length.to_string(),
         4,
       ),
-      (
-        "Packet Data".to_owned(),
-        self.captured_packet_length as usize,
-      ),
-      (
-        "Options".to_owned(),
-        self.base.length() - Self::SIZE - self.captured_packet_length as usize,
-      ),
     ];
+
+    let mut sum = 0;
+    for en in enhanced_packets {
+      let l: LinkTypes = en.linktype.try_into().unwrap();
+      if l != self.link_type {
+        continue;
+      }
+      for s in &en.sections {
+        let data: &[u8] = &self.raw()[28 + sum..28 + sum + s.1];
+        let mut data_padded: [u8; 8] = [0; 8];
+        for i in 0..data.len().min(8) {
+          data_padded[i] = data[i];
+        }
+        sections.push((
+          s.0.clone() + " - " + &u64::from_le_bytes(data_padded).to_string(),
+          s.1,
+        ));
+        sum += s.1;
+      }
+      break;
+    }
+    sections.push((
+      "Data".to_owned(),
+      self.captured_packet_length as usize - sum,
+    ));
+    sections.push((
+      "Options".to_owned(),
+      self.length() - Self::SIZE - self.captured_packet_length as usize,
+    ));
     let mut base_sections = self.base.sections();
     base_sections.remove(2);
     base_sections.splice(2..2, sections);
+
     assert_eq!(
-      base_sections.iter().map(|s| s.1 as u32).sum::<u32>(),
-      self.base.length_
+      base_sections.iter().map(|s| s.1).sum::<usize>(),
+      self.length()
     );
     base_sections
+  }
+}
+
+impl PngBlock for EnhancedPacket {
+  fn rows(&self, width: u16) -> u16 {
+    self.base.rows(width)
+  }
+
+  fn sections(&self) -> Vec<(String, usize)> {
+    self.sections_.clone()
   }
 
   fn error(&self) -> &BlockErrorKind {

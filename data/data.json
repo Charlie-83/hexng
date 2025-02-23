@@ -1,0 +1,34 @@
+{
+  "enhanced_packets": [
+    {
+      "name": "Bluetooth LE LL with PHDR",
+      "linktype": 256,
+      "sections": [
+        [
+          "RF Channel",
+          1
+        ],
+        [
+          "Signal Power",
+          1
+        ],
+        [
+          "Noise Power",
+          1
+        ],
+        [
+          "Access Address Offenses",
+          1
+        ],
+        [
+          "Reference Access Address",
+          4
+        ],
+        [
+          "Flags",
+          2
+        ]
+      ]
+    }
+  ]
+}

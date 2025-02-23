@@ -5,11 +5,15 @@ use ratatui::{
   widgets::{Block, Paragraph, Widget},
   DefaultTerminal,
 };
-use std::io::{self, Read};
+use std::{
+  env,
+  io::{self, Read},
+};
 
 use crate::{
   help::{draw_help, HELP_LINES},
   info::get_detail_string,
+  loader::load,
   pcapng::PngBlock,
 };
 use crate::{hexview::HexView, pcapng::parse};
@@ -27,9 +31,18 @@ impl App {
     let f = std::fs::File::open(&path).expect("Failed to open file");
     let mut reader = std::io::BufReader::new(f);
     let mut raw: Vec<u8> = vec![];
+    let config = load(
+      env::current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("data.json")
+        .to_str()
+        .unwrap(),
+    )?;
     reader.read_to_end(&mut raw)?;
     let application = App {
-      data: parse(&raw),
+      data: parse(&raw, config),
       hexview: HexView::default(),
       exit: false,
       path,

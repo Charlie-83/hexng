@@ -1,6 +1,7 @@
 use crate::baseblock::BaseBlock;
 use crate::enhanced_packet::EnhancedPacket;
 use crate::interface_description::InterfaceDescription;
+use crate::loader::JTop;
 use crate::section_header::SectionHeader;
 use crate::types::{BlockTypes, LinkTypes};
 use crate::util::div_ceil;
@@ -35,7 +36,7 @@ where
   (Box::new(t.0), t.1)
 }
 
-pub fn parse(data: &Vec<u8>) -> Vec<Box<dyn PngBlock>> {
+pub fn parse(data: &Vec<u8>, config: JTop) -> Vec<Box<dyn PngBlock>> {
   let mut out: Vec<Box<dyn PngBlock>> = vec![];
   let mut interfaces: Vec<LinkTypes> = vec![];
   let mut pos: usize = 0;
@@ -45,7 +46,12 @@ pub fn parse(data: &Vec<u8>) -> Vec<Box<dyn PngBlock>> {
     let single: (Box<dyn PngBlock>, usize);
     match block_type {
       BlockTypes::EnhancedPacketBlock => {
-        single = EnhancedPacket::parse(&data[pos..], id, &interfaces)
+        single = box_up(EnhancedPacket::parse(
+          &data[pos..],
+          id,
+          &interfaces,
+          &config,
+        ))
       }
       BlockTypes::InterfaceDescriptionBlock => {
         let ifd = InterfaceDescription::parse(&data[pos..], id);
@@ -151,7 +157,7 @@ pub fn draw_block(
   }
 
   for i in 0..spans.len() {
-    spans.insert(2 * i + 1, Span::raw("|"));
+    spans.insert(2 * i + 1, Span::raw(" "));
   }
 
   Paragraph::new(Line::from(spans))

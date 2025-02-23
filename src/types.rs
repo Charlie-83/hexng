@@ -106,7 +106,7 @@ impl From<u32> for BlockTypes {
   }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum LinkTypes {
   Null = 0,
   Ethernet = 1,

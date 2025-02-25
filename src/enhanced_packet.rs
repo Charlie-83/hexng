@@ -1,8 +1,8 @@
 use crate::{
   baseblock::BaseBlock,
-  loader::{EnhancedPacketConfig, Config},
+  loader::Config,
   pcapng::{BlockErrorKind, PngBlock},
-  types::{link_type_str, BlockTypes, LinkTypes},
+  types::BlockTypes,
 };
 
 pub struct EnhancedPacket {
@@ -12,8 +12,9 @@ pub struct EnhancedPacket {
   timestamp_lower: u32,
   captured_packet_length: u32,
   original_packet_length: u32,
-  link_type: LinkTypes,
+  link_type: u16,
   sections_: Vec<(String, usize)>,
+  link_type_str: String,
 }
 
 impl EnhancedPacket {
@@ -22,7 +23,7 @@ impl EnhancedPacket {
   pub fn parse(
     data: &[u8],
     id: u32,
-    interfaces: &Vec<LinkTypes>,
+    interfaces: &Vec<u16>,
     config: &Config,
   ) -> (EnhancedPacket, usize) {
     let interface_id = u32::from_le_bytes(data[8..12].try_into().unwrap());
@@ -31,6 +32,8 @@ impl EnhancedPacket {
     let timestamp_lower = u32::from_le_bytes(data[16..20].try_into().unwrap());
     let captured_packet_length = u32::from_le_bytes(data[24..28].try_into().unwrap());
     let original_packet_length = u32::from_le_bytes(data[28..32].try_into().unwrap());
+    let link_type = interfaces[interface_id as usize];
+    let link_type_str = config.link_types[&link_type].clone();
     let mut p = EnhancedPacket {
       base: base.0,
       interface_id,
@@ -38,14 +41,15 @@ impl EnhancedPacket {
       timestamp_lower,
       captured_packet_length,
       original_packet_length,
-      link_type: interfaces[interface_id as usize],
+      link_type,
       sections_: vec![],
+      link_type_str,
     };
-    p.sections_ = p.sections_impl(&config.enhanced_packets);
+    p.sections_ = p.sections_impl(config);
     (p, base.1)
   }
 
-  fn sections_impl(&self, enhanced_packets: &Vec<EnhancedPacketConfig>) -> Vec<(String, usize)> {
+  fn sections_impl(&self, config: &Config) -> Vec<(String, usize)> {
     let mut sections: Vec<(String, usize)> = vec![
       (
         "Interface ID - ".to_owned() + &self.interface_id.to_string(),
@@ -70,8 +74,8 @@ impl EnhancedPacket {
     ];
 
     let mut sum = 0;
-    for en in enhanced_packets {
-      let l: LinkTypes = en.linktype.try_into().unwrap();
+    for en in &config.enhanced_packets {
+      let l: u16 = en.linktype.try_into().unwrap();
       if l != self.link_type {
         continue;
       }
@@ -135,7 +139,7 @@ impl PngBlock for EnhancedPacket {
   }
 
   fn title_line(&self) -> String {
-    self.base.title_line() + " - " + &link_type_str(&self.link_type)
+    self.base.title_line() + " - " + &self.link_type_str
   }
 
   fn raw(&self) -> &Vec<u8> {

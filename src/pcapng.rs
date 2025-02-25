@@ -3,7 +3,7 @@ use crate::enhanced_packet::EnhancedPacket;
 use crate::interface_description::InterfaceDescription;
 use crate::loader::Config;
 use crate::section_header::SectionHeader;
-use crate::types::{BlockTypes, LinkTypes};
+use crate::types::BlockTypes;
 use crate::util::div_ceil;
 use ratatui::{buffer::Buffer, layout::Rect};
 use ratatui::{
@@ -38,7 +38,7 @@ where
 
 pub fn parse(data: &Vec<u8>, config: Config) -> Vec<Box<dyn PngBlock>> {
   let mut out: Vec<Box<dyn PngBlock>> = vec![];
-  let mut interfaces: Vec<LinkTypes> = vec![];
+  let mut interfaces: Vec<u16> = vec![];
   let mut pos: usize = 0;
   let mut id: u32 = 0;
   while pos < data.len() {
@@ -54,7 +54,7 @@ pub fn parse(data: &Vec<u8>, config: Config) -> Vec<Box<dyn PngBlock>> {
         ))
       }
       BlockTypes::InterfaceDescriptionBlock => {
-        let ifd = InterfaceDescription::parse(&data[pos..], id);
+        let ifd = InterfaceDescription::parse(&data[pos..], id, &config);
         interfaces.push(ifd.0.link_type);
         single = box_up(ifd);
       }

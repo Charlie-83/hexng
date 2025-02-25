@@ -12,13 +12,13 @@ pub struct EnhancedPacketConfig {
 
 pub struct Config {
   pub enhanced_packets: Vec<EnhancedPacketConfig>,
-  pub additional_link_types: HashMap<u16, String>,
+  pub link_types: HashMap<u16, String>,
 }
 
 #[derive(Deserialize)]
 pub struct JConfig {
   pub enhanced_packets: Option<Vec<EnhancedPacketConfig>>,
-  pub additional_link_types: Option<HashMap<u16, String>>,
+  pub link_types: Option<Vec<(u16, String)>>,
 }
 
 pub fn load(path: &str) -> std::io::Result<Config> {
@@ -30,9 +30,10 @@ pub fn load(path: &str) -> std::io::Result<Config> {
 
   let enhanced_packets: Vec<EnhancedPacketConfig> = v.enhanced_packets.unwrap_or(vec![]);
   let additional_link_types: HashMap<u16, String> =
-    v.additional_link_types.unwrap_or(HashMap::new());
+    v.link_types.unwrap_or(vec![]).into_iter().collect();
+
   Ok(Config {
     enhanced_packets,
-    additional_link_types,
+    link_types: additional_link_types,
   })
 }

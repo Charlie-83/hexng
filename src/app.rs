@@ -50,7 +50,7 @@ impl App {
     if local_config.is_ok() {
       let mut c = local_config.unwrap();
       config.enhanced_packets.append(&mut c.enhanced_packets);
-      config.additional_link_types.extend(c.additional_link_types);
+      config.link_types.extend(c.link_types);
     }
     reader.read_to_end(&mut raw)?;
     let application = App {

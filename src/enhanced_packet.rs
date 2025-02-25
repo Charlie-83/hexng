@@ -1,6 +1,6 @@
 use crate::{
   baseblock::BaseBlock,
-  loader::{JEnhanced, JTop},
+  loader::{EnhancedPacketConfig, Config},
   pcapng::{BlockErrorKind, PngBlock},
   types::{link_type_str, BlockTypes, LinkTypes},
 };
@@ -23,7 +23,7 @@ impl EnhancedPacket {
     data: &[u8],
     id: u32,
     interfaces: &Vec<LinkTypes>,
-    config: &JTop,
+    config: &Config,
   ) -> (EnhancedPacket, usize) {
     let interface_id = u32::from_le_bytes(data[8..12].try_into().unwrap());
     let base = BaseBlock::parse(data, id);
@@ -45,7 +45,7 @@ impl EnhancedPacket {
     (p, base.1)
   }
 
-  fn sections_impl(&self, enhanced_packets: &Vec<JEnhanced>) -> Vec<(String, usize)> {
+  fn sections_impl(&self, enhanced_packets: &Vec<EnhancedPacketConfig>) -> Vec<(String, usize)> {
     let mut sections: Vec<(String, usize)> = vec![
       (
         "Interface ID - ".to_owned() + &self.interface_id.to_string(),

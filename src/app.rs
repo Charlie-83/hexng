@@ -31,7 +31,7 @@ impl App {
     let f = std::fs::File::open(&path).expect("Failed to open file");
     let mut reader = std::io::BufReader::new(f);
     let mut raw: Vec<u8> = vec![];
-    let config = load(
+    let mut config = load(
       env::current_exe()
         .unwrap()
         .parent()
@@ -40,6 +40,18 @@ impl App {
         .to_str()
         .unwrap(),
     )?;
+    let local_config = load(
+      env::current_dir()
+        .unwrap()
+        .join(".hexng.json")
+        .to_str()
+        .unwrap(),
+    );
+    if local_config.is_ok() {
+      let mut c = local_config.unwrap();
+      config.enhanced_packets.append(&mut c.enhanced_packets);
+      config.additional_link_types.extend(c.additional_link_types);
+    }
     reader.read_to_end(&mut raw)?;
     let application = App {
       data: parse(&raw, config),
